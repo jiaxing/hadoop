@@ -36,7 +36,10 @@ RUN sed -i "s|^export JAVA_HOME=.*|export JAVA_HOME=$JAVA_HOME|" $HADOOP_PREFIX/
 
 RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa \
   && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys \
-  && chmod 0600 ~/.ssh/authorized_keys
+  && chmod 0600 ~/.ssh/authorized_keys \
+  && service ssh restart \
+  && ssh-keyscan -H localhost >> ~/.ssh/known_hosts \
+  && ssh-keyscan -H 0.0.0.0 >> ~/.ssh/known_hosts
 
 ADD ./pseudo-distributed/config/* ${HADOOP_CONF_DIR}/
 ADD ./pseudo-distributed/start-hadoop-pseudo-distributed.sh /sbin/start-hadoop-pseudo-distributed.sh
