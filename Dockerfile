@@ -6,7 +6,8 @@ ARG HADOOP_URL=https://archive.apache.org/dist/hadoop/core/${HADOOP}/${HADOOP}.t
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 ENV HADOOP_PREFIX=/opt/${HADOOP}
 ENV HADOOP_LOG_DIR=/var/log/hadoop
-ENV HADOOP_CONFIG_DIR=/etc/hadoop
+ENV HADOOP_CONF_DIR=/etc/hadoop
+ENV HADOOP_DATA_DIR=/data/hadoop
 ENV PATH $HADOOP_PREFIX/bin:$PATH
 
 RUN apt-get clean \
@@ -24,21 +25,23 @@ RUN apt-get clean \
 
 RUN curl -fSL ${HADOOP_URL} -o /tmp/${HADOOP}.tar.gz \
   && curl -fSL ${HADOOP_URL}.asc -o /tmp/${HADOOP}.tar.gz.asc \
-  && gpg --keyserver hkp://pgp.mit.edu:80 --recv-key 8A256EF198AAD349 \
+  && gpg --keyserver pgpkeys.mit.edu --recv-key 8A256EF198AAD349 \
   && gpg --verify /tmp/${HADOOP}.tar.gz.asc /tmp/${HADOOP}.tar.gz \
   && tar -xzf /tmp/${HADOOP}.tar.gz -C /opt/ \
   && rm /tmp/${HADOOP}* \
-  && ln -s ${HADOOP_PREFIX}/etc/hadoop ${HADOOP_CONFIG_DIR}
+  && ln -s ${HADOOP_PREFIX}/etc/hadoop ${HADOOP_CONF_DIR}
 
-RUN service ssh restart \
-  && ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa \
+RUN sed -i "s|^export JAVA_HOME=.*|export JAVA_HOME=$JAVA_HOME|" $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh \
+  && sed -i "s|^export HADOOP_CONF_DIR=.*|export HADOOP_CONF_DIR=$HADOOP_CONF_DIR|" $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
+
+RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa \
   && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys \
   && chmod 0600 ~/.ssh/authorized_keys
 
-ADD ./pseudo-distributed/config/* ${HADOOP_CONFIG_DIR}/
-ADD ./pseudo-distributed/start-hadoop.sh ${HADOOP_PREFIX}/sbin/start-hadoop.sh
+ADD ./pseudo-distributed/config/* ${HADOOP_CONF_DIR}/
+ADD ./pseudo-distributed/start-hadoop-pseudo-distributed.sh /sbin/start-hadoop-pseudo-distributed.sh
 
-VOLUME ["${HADOOP_CONFIG_DIR}", "${HADOOP_LOG_DIR}", "/data"]
+VOLUME ["${HADOOP_CONF_DIR}", "${HADOOP_LOG_DIR}", "${HADOOP_DATA_DIR}"]
 
 # HDFS
 EXPOSE 50010 50020 50070 50075 50090
@@ -49,4 +52,4 @@ EXPOSE 8030 8031 8032 8033 8040 8042 8088
 #Other
 EXPOSE 49707 2122
 
-CMD ["${HADOOP_PREFIX}/sbin/start-hadoop.sh"]
+CMD ["/sbin/start-hadoop-pseudo-distributed.sh"]
