@@ -25,7 +25,7 @@ RUN apt-get clean \
 
 RUN curl -fSL ${HADOOP_URL} -o /tmp/${HADOOP}.tar.gz \
   && curl -fSL ${HADOOP_URL}.asc -o /tmp/${HADOOP}.tar.gz.asc \
-  && gpg --keyserver pgpkeys.mit.edu --recv-key 8A256EF198AAD349 \
+  && gpg --keyserver hkp://pgpkeys.mit.edu:80 --recv-key 8A256EF198AAD349 \
   && gpg --verify /tmp/${HADOOP}.tar.gz.asc /tmp/${HADOOP}.tar.gz \
   && tar -xzf /tmp/${HADOOP}.tar.gz -C /opt/ \
   && rm /tmp/${HADOOP}* \
