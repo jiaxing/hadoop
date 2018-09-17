@@ -12,4 +12,4 @@ and `HADOOP_DATA_DIR=/data/hadoop`.
 ## How-To:
 
 ### Start a single-node pseudo distributed operation
-`docker run -d -p 8088:8088 -p 19888:19888 hadoop`
+`docker run -d --name hadoop -p 8088:8088 -p 19888:19888 -p 50070:50070 -v ~/dump:/data/hadoop jaysong/hadoop:2.9.1`

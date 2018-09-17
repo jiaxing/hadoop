@@ -13,7 +13,7 @@ ENV PATH $HADOOP_PREFIX/bin:$PATH
 RUN apt-get clean \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-    openjdk-8-jre-headless \
+    openjdk-8-jdk \
     ca-certificates-java \
     curl \
     dirmngr \
@@ -31,9 +31,6 @@ RUN curl -fSL ${HADOOP_URL} -o /tmp/${HADOOP}.tar.gz \
   && rm /tmp/${HADOOP}* \
   && ln -s ${HADOOP_PREFIX}/etc/hadoop ${HADOOP_CONF_DIR}
 
-RUN sed -i "s|^export JAVA_HOME=.*|export JAVA_HOME=$JAVA_HOME|" $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh \
-  && sed -i "s|^export HADOOP_CONF_DIR=.*|export HADOOP_CONF_DIR=$HADOOP_CONF_DIR|" $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
-
 RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa \
   && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys \
   && chmod 0600 ~/.ssh/authorized_keys \
@@ -41,8 +38,14 @@ RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa \
   && ssh-keyscan -H localhost >> ~/.ssh/known_hosts \
   && ssh-keyscan -H 0.0.0.0 >> ~/.ssh/known_hosts
 
+RUN sed -i "s|^#\?export JAVA_HOME=.*|export JAVA_HOME=$JAVA_HOME|" $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh \
+  && sed -i "s|^#\?export HADOOP_CONF_DIR=.*|export HADOOP_CONF_DIR=$HADOOP_CONF_DIR|" $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh \
+  && sed -i "s|^#\?export HADOOP_LOG_DIR=.*|export HADOOP_LOG_DIR=$HADOOP_LOG_DIR|" $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
+
 ADD ./pseudo-distributed/config/* ${HADOOP_CONF_DIR}/
 ADD ./pseudo-distributed/start-hadoop-pseudo-distributed.sh /sbin/start-hadoop-pseudo-distributed.sh
+
+RUN hdfs namenode -format
 
 VOLUME ["${HADOOP_CONF_DIR}", "${HADOOP_LOG_DIR}", "${HADOOP_DATA_DIR}"]
 
